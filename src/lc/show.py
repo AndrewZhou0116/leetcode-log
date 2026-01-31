@@ -5,16 +5,12 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Tuple
 
-from .db import connect
+from .db import connect, get_meta
 
 @dataclass(frozen=True)
 class ShowItem:
     lc_num: int
     title: str
-
-def _get_meta(conn, key: str, default: str) -> str:
-    row = conn.execute("SELECT value FROM meta WHERE key=?;", (key,)).fetchone()
-    return row["value"] if row else default
 
 def load_show(db_path: Path) -> Tuple[List[ShowItem], List[ShowItem]]:
     """
@@ -25,9 +21,9 @@ def load_show(db_path: Path) -> Tuple[List[ShowItem], List[ShowItem]]:
     now = int(time.time())
     conn = connect(db_path)
 
-    cursor_plan_order = int(_get_meta(conn, "cursor_plan_order", "1"))
-    new_quota = int(_get_meta(conn, "new_quota", "1"))
-    review_per_new = int(_get_meta(conn, "review_per_new", "3"))
+    cursor_plan_order = int(get_meta(conn, "cursor_plan_order", "1") or "1")
+    new_quota = int(get_meta(conn, "new_quota", "1")or "1")
+    review_per_new = int(get_meta(conn, "review_per_new", "3"))
     review_quota = max(0, new_quota * review_per_new)
 
     new_rows = conn.execute(

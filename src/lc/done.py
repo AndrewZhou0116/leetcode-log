@@ -4,14 +4,14 @@ import time
 from pathlib import Path
 from typing import Optional, Tuple
 
-from .db import connect, tx
+from .db import connect, tx, get_meta, set_meta
 from .srs import ReviewState, next_state
 
-def _get_meta(conn, key: str, default: str) -> str:
+def get_meta(conn, key: str, default: str) -> str:
     row = conn.execute("SELECT value FROM meta WHERE key=?;", (key,)).fetchone()
     return row["value"] if row else default
 
-def _set_meta(conn, key: str, value: str) -> None:
+def set_meta(conn, key: str, value: str) -> None:
     conn.execute(
         "INSERT INTO meta(key,value) VALUES(?,?) "
         "ON CONFLICT(key) DO UPDATE SET value=excluded.value;",
@@ -40,7 +40,7 @@ def _load_prev_review(conn, lc_num: int) -> Optional[ReviewState]:
     )
 
 def _advance_cursor_to_next_new(conn) -> None:
-    cur = int(_get_meta(conn, "cursor_plan_order", "1"))
+    cur = int(get_meta(conn, "cursor_plan_order", "1") or "1")
     row = conn.execute(
         """
         SELECT MIN(p.plan_order) AS next_po
@@ -54,9 +54,9 @@ def _advance_cursor_to_next_new(conn) -> None:
     if next_po is None:
         # no NEW left: cursor becomes (max+1)
         mx = conn.execute("SELECT MAX(plan_order) AS m FROM problems;").fetchone()["m"] or 0
-        _set_meta(conn, "cursor_plan_order", str(int(mx) + 1))
+        set_meta(conn, "cursor_plan_order", str(int(mx) + 1))
     else:
-        _set_meta(conn, "cursor_plan_order", str(int(next_po)))
+        set_meta(conn, "cursor_plan_order", str(int(next_po)))
 
 def apply_done(db_path: Path, lc_num: int, grade: str, note: Optional[str]) -> Tuple[int, int]:
     """

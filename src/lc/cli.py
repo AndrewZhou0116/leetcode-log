@@ -54,13 +54,52 @@ def show(db: Path = typer.Option(DEFAULT_DB_PATH, "--db", help="Path to sqlite d
 @app.command()
 def done(
     lc_num: int = typer.Argument(..., help="LeetCode problem number"),
-    grade: str = typer.Argument(..., help="again|hard|good|easy"),
+    grade: str = typer.Argument("good", help="again|hard|good|easy"),
     note: str = typer.Option("", "--note", help="Optional note for this review log"),
     db: Path = typer.Option(DEFAULT_DB_PATH, "--db", help="Path to sqlite db file"),
 ):
     """Mark a problem done and schedule next review (SRS)."""
     prev_due, next_due = apply_done(db, lc_num, grade, note if note else None)
     rprint(f"[bold cyan]OK[/bold cyan] done {lc_num} grade={grade} prev_due={prev_due} next_due={next_due}")
+def _quick_done(lc_num: int, grade: str, note: str, db: Path):
+    prev_due, next_due = apply_done(db, lc_num, grade, note if note else None)
+    rprint(f"[bold cyan]OK[/bold cyan] done {lc_num} grade={grade} prev_due={prev_due} next_due={next_due}")
+
+@app.command()
+def again(
+    lc_num: int = typer.Argument(..., help="LeetCode problem number"),
+    note: str = typer.Option("", "--note", help="Optional note"),
+    db: Path = typer.Option(DEFAULT_DB_PATH, "--db", help="Path to sqlite db file"),
+):
+    """Shortcut for: done <lc_num> again"""
+    _quick_done(lc_num, "again", note, db)
+
+@app.command()
+def hard(
+    lc_num: int = typer.Argument(..., help="LeetCode problem number"),
+    note: str = typer.Option("", "--note", help="Optional note"),
+    db: Path = typer.Option(DEFAULT_DB_PATH, "--db", help="Path to sqlite db file"),
+):
+    """Shortcut for: done <lc_num> hard"""
+    _quick_done(lc_num, "hard", note, db)
+
+@app.command()
+def good(
+    lc_num: int = typer.Argument(..., help="LeetCode problem number"),
+    note: str = typer.Option("", "--note", help="Optional note"),
+    db: Path = typer.Option(DEFAULT_DB_PATH, "--db", help="Path to sqlite db file"),
+):
+    """Shortcut for: done <lc_num> good"""
+    _quick_done(lc_num, "good", note, db)
+
+@app.command()
+def easy(
+    lc_num: int = typer.Argument(..., help="LeetCode problem number"),
+    note: str = typer.Option("", "--note", help="Optional note"),
+    db: Path = typer.Option(DEFAULT_DB_PATH, "--db", help="Path to sqlite db file"),
+):
+    """Shortcut for: done <lc_num> easy"""
+    _quick_done(lc_num, "easy", note, db)
 
 def main():
     app()
