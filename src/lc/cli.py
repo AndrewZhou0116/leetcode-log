@@ -5,7 +5,7 @@ from lc.db import DEFAULT_DB_PATH, init_db
 from .importer import import_plan
 from .show import load_show
 from .done import apply_done
-
+from .seed import cursor_set, mark_done_before
 
 app = typer.Typer(help="LeetCode SRS CLI (Plan+Cursor+SRS)")
 
@@ -100,6 +100,28 @@ def easy(
 ):
     """Shortcut for: done <lc_num> easy"""
     _quick_done(lc_num, "easy", note, db)
+
+cursor_app = typer.Typer(help="Manage NEW cursor (only affects NEW)")
+app.add_typer(cursor_app, name="cursor")
+
+@cursor_app.command("set")
+def cursor_set_cmd(
+    lc_num: int = typer.Argument(..., help="Set NEW start to this LeetCode number"),
+    db: Path = typer.Option(DEFAULT_DB_PATH, "--db", help="Path to sqlite db file"),
+):
+    po = cursor_set(db, lc_num)
+    rprint(f"[bold cyan]OK[/bold cyan] cursor_plan_order set to {po} (lc_num={lc_num})")
+
+@app.command("mark-done-before")
+def mark_done_before_cmd(
+    lc_num: int = typer.Argument(..., help="All problems before this become due REVIEW"),
+    force: bool = typer.Option(False, "--force", help="Also force existing reviews to become due now"),
+    db: Path = typer.Option(DEFAULT_DB_PATH, "--db", help="Path to sqlite db file"),
+):
+    n = mark_done_before(db, lc_num, force=force)
+    rprint(f"[bold cyan]OK[/bold cyan] seeded {n} missing problems before {lc_num}; force={force}")
+
+
 
 def main():
     app()
