@@ -1,6 +1,5 @@
-# lcsrs
+# leetcode-log
 
-A CLI for LeetCode practice tracking with a plan order + spaced repetition.
 
 ```
 # first time
