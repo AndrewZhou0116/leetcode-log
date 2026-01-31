@@ -4,6 +4,8 @@ from rich import print as rprint
 from lc.db import DEFAULT_DB_PATH, init_db
 from .importer import import_plan
 from .show import load_show
+from .done import apply_done
+
 
 app = typer.Typer(help="LeetCode SRS CLI (Plan+Cursor+SRS)")
 
@@ -49,6 +51,16 @@ def show(db: Path = typer.Option(DEFAULT_DB_PATH, "--db", help="Path to sqlite d
     else:
         for it in review_items:
             rprint(f"  {it.lc_num}  {it.title}")
+@app.command()
+def done(
+    lc_num: int = typer.Argument(..., help="LeetCode problem number"),
+    grade: str = typer.Argument(..., help="again|hard|good|easy"),
+    note: str = typer.Option("", "--note", help="Optional note for this review log"),
+    db: Path = typer.Option(DEFAULT_DB_PATH, "--db", help="Path to sqlite db file"),
+):
+    """Mark a problem done and schedule next review (SRS)."""
+    prev_due, next_due = apply_done(db, lc_num, grade, note if note else None)
+    rprint(f"[bold cyan]OK[/bold cyan] done {lc_num} grade={grade} prev_due={prev_due} next_due={next_due}")
 
 def main():
     app()
