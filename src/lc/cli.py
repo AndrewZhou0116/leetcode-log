@@ -7,6 +7,17 @@ from .show import load_show
 from .done import apply_done
 from .seed import cursor_set, mark_done_before
 
+from datetime import datetime
+from rich.table import Table
+from rich.console import Console
+
+from .history import fetch_history
+
+
+
+
+
+
 app = typer.Typer(help="LeetCode SRS CLI (Plan+Cursor+SRS)")
 
 @app.callback()
@@ -121,7 +132,36 @@ def mark_done_before_cmd(
     n = mark_done_before(db, lc_num, force=force)
     rprint(f"[bold cyan]OK[/bold cyan] seeded {n} missing problems before {lc_num}; force={force}")
 
+@app.command()
+def history(
+    n: int = typer.Option(15, "--n", help="How many recent logs to show"),
+    all: bool = typer.Option(False, "--all", help="Include seed logs"),
+    notes: bool = typer.Option(False, "--notes", help="Show note column"),
+    db: Path = typer.Option(DEFAULT_DB_PATH, "--db", help="Path to sqlite db file"),
+):
+    """Show recent review logs."""
+    items = fetch_history(db, n=n, include_seed=all)
 
+    table = Table(title=f"History (last {len(items)})", show_lines=False)
+    table.add_column("Time", no_wrap=True)
+    table.add_column("LC", justify="right", no_wrap=True)
+    table.add_column("Grade", no_wrap=True)
+    table.add_column("NextDue", no_wrap=True)
+    table.add_column("Title")
+
+    if notes:
+        table.add_column("Note")
+
+    for it in items:
+        t = datetime.fromtimestamp(it.reviewed_at).strftime("%m-%d %H:%M")
+        nd = "-" if it.next_due_at is None else datetime.fromtimestamp(it.next_due_at).strftime("%m-%d")
+        row = [t, str(it.lc_num), it.grade, nd, it.title]
+
+        if notes:
+            row.append(it.note or "")
+        table.add_row(*row)
+
+    Console().print(table)
 
 def main():
     app()
